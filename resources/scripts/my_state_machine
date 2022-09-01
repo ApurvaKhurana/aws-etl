@@ -1,0 +1,46 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "my-function",
+  "States": {
+    "my-function": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "FunctionName": "my-lambda",
+        "Payload": {
+          "src_s3_bucket": "${src_s3_bucket}",
+          "src_s3_path": "${src_s3_path}",
+          "dest_s3_bucket": "${dest_s3_bucket}",
+          "dest_s3_path": "${dest_s3_path}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "read-my-table"
+    },
+    "read-my-table": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:getItem",
+      "Parameters": {
+        "TableName": "${dd_table_name}",
+        "Key": {
+          "Column": {
+            "${key1}": "${value1}"
+          }
+        }
+      },
+      "End": true
+    }
+  }
+}
